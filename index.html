@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Multitouch tracker</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, maximum-scale=1.0">
+  <link rel="stylesheet" href="styles/styles.css">
+</head>
+<body>
+  <button onclick="fullscreen(document.documentElement)" style="top:20px;position:fixed;z-index:1;left:20px;">FS</button>
+  <script>
+    function fullscreen() {
+      var isInFullScreen = (document.fullscreenElement && document.fullscreenElement !== null) ||
+      (document.webkitFullscreenElement && document.webkitFullscreenElement !== null) ||
+      (document.mozFullScreenElement && document.mozFullScreenElement !== null) ||
+      (document.msFullscreenElement && document.msFullscreenElement !== null);
+
+      var docElm = document.documentElement;
+      if (!isInFullScreen) {
+        if (docElm.requestFullscreen) {
+          docElm.requestFullscreen();
+        } else if (docElm.mozRequestFullScreen) {
+          docElm.mozRequestFullScreen();
+        } else if (docElm.webkitRequestFullScreen) {
+          docElm.webkitRequestFullScreen();
+        } else if (docElm.msRequestFullscreen) {
+          docElm.msRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+      }
+    }
+    var canvas,
+      c, // c is the canvas' context 2D
+      devicePixelRatio,
+      container;
+
+    var points = [];
+
+    function draw() {
+      /* hack to work around lack of orientationchange/resize event */
+      if(canvas.height != window.innerHeight * devicePixelRatio) {
+        resetCanvas();
+      } else {
+        c.clearRect(0,0,canvas.width, canvas.height);
+      }
+      c.strokeStyle = "#111";
+      c.lineWidth = "50";
+
+      for (var i = 0; i<points.length; i++) {
+        /* draw all circles */
+        c.beginPath();
+        c.arc(points[i].clientX, points[i].clientY, 80, 0, Math.PI*2, true);
+        c.stroke();
+      }
+    }
+
+    function positionHandler(e) {
+      if ((e.clientX)&&(e.clientY)) {
+        points = [e];
+      } else if (e.targetTouches) {
+        points = e.targetTouches;
+        e.preventDefault();
+      }
+      draw();
+      // window.requestAnimationFrame(draw);
+    }
+
+    function init() {
+      canvas = document.createElement( 'canvas' );
+      c = canvas.getContext( '2d' );
+      container = document.createElement( 'div' );
+      container.className = "container";
+      resetCanvas();
+      container.appendChild(canvas);
+      document.body.appendChild( container );
+      
+      canvas.addEventListener('mousemove',  positionHandler, false );
+      canvas.addEventListener('touchstart', positionHandler, false );
+      canvas.addEventListener('touchmove',  positionHandler, false );
+      
+      // suppress context menu
+      canvas.addEventListener('contextmenu', function(e) { e.preventDefault(); }, false)
+    }
+
+    function resetCanvas() {
+        // HiDPI canvas adapted from http://www.html5rocks.com/en/tutorials/canvas/hidpi/
+      devicePixelRatio = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * devicePixelRatio;
+        canvas.height = window.innerHeight * devicePixelRatio;
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        c.scale(devicePixelRatio, devicePixelRatio);
+    }
+
+    window.addEventListener('load',function() {
+      /* hack to prevent firing the init script before the window object's values are populated */
+      setTimeout(init,100);
+    },false);
+  </script>
+</body>
+</html>
